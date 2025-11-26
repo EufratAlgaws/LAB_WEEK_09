@@ -17,11 +17,18 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 import com.example.lab_week_09.ui.theme.OnBackgroundItemText
 import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
@@ -40,7 +47,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Home()
+                    val navController = rememberNavController()
+                    App(navController = navController)
                 }
             }
         }
@@ -48,7 +56,35 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Home() {
+fun App(navController: NavHostController) {
+    NavHost(
+        navController = navController,
+        startDestination = "home"
+    ) {
+        composable("home") {
+            Home { listDataString ->
+                navController.navigate("resultContent/?listData=$listDataString")
+            }
+        }
+
+        composable(
+            route = "resultContent/?listData={listData}",
+            arguments = listOf(
+                navArgument("listData") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val listDataString = backStackEntry.arguments?.getString("listData").orEmpty()
+            ResultContent(listDataString = listDataString)
+        }
+    }
+}
+
+@Composable
+fun Home(
+    navigateFromHomeToResult: (String) -> Unit
+) {
     val listData = remember {
         mutableStateListOf(
             Student("Tanu"),
@@ -70,16 +106,22 @@ fun Home() {
         onButtonClick = {
             listData.add(inputField)
             inputField = Student("")
+        },
+        navigateFromHomeToResult = {
+            // Untuk sekarang, kirim join string (belum pakai Moshi)
+            val joined = listData.joinToString(separator = ",") { it.name }
+            navigateFromHomeToResult(joined)
         }
     )
 }
 
 @Composable
 fun HomeContent(
-    listData: List<Student>,
+    listData: SnapshotStateList<Student>,
     inputField: Student,
     onInputValueChange: (String) -> Unit,
-    onButtonClick: () -> Unit
+    onButtonClick: () -> Unit,
+    navigateFromHomeToResult: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -98,10 +140,18 @@ fun HomeContent(
             }
         )
 
-        PrimaryTextButton(
-            text = stringResource(id = R.string.button_click),
-            onClick = onButtonClick
-        )
+        // Row: Submit & Finish
+        Column {
+            PrimaryTextButton(
+                text = stringResource(id = R.string.button_click),
+                onClick = onButtonClick
+            )
+
+            PrimaryTextButton(
+                text = stringResource(id = R.string.button_navigate),
+                onClick = navigateFromHomeToResult
+            )
+        }
 
         LazyColumn(
             modifier = Modifier.padding(top = 16.dp)
@@ -113,20 +163,38 @@ fun HomeContent(
     }
 }
 
+@Composable
+fun ResultContent(listDataString: String) {
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        OnBackgroundTitleText(text = "Result Screen")
+
+        // List sederhana dari string join, nanti di-boost pakai Moshi
+        val items = if (listDataString.isBlank()) {
+            emptyList()
+        } else {
+            listDataString.split(",")
+        }
+
+        LazyColumn(
+            modifier = Modifier.padding(top = 16.dp)
+        ) {
+            items(items) { name ->
+                OnBackgroundItemText(text = name)
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
-fun PreviewHomeElements() {
+fun PreviewAppNav() {
     LAB_WEEK_09Theme {
-        val previewList = listOf(
-            Student("Tanu"),
-            Student("Tina"),
-            Student("Tono")
-        )
-        HomeContent(
-            listData = previewList,
-            inputField = Student(""),
-            onInputValueChange = {},
-            onButtonClick = {}
-        )
+        val navController = rememberNavController()
+        App(navController = navController)
     }
 }
