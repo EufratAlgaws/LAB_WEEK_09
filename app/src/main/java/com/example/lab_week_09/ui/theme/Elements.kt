@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-// UI Element for displaying a title
+// Title text on background
 @Composable
 fun OnBackgroundTitleText(text: String) {
     TitleText(
@@ -19,7 +19,6 @@ fun OnBackgroundTitleText(text: String) {
     )
 }
 
-// Here, we use the titleLarge style from the typography
 @Composable
 fun TitleText(text: String, color: Color) {
     Text(
@@ -29,7 +28,7 @@ fun TitleText(text: String, color: Color) {
     )
 }
 
-// UI Element for displaying an item list
+// Item text on background
 @Composable
 fun OnBackgroundItemText(text: String) {
     ItemText(
@@ -38,7 +37,6 @@ fun OnBackgroundItemText(text: String) {
     )
 }
 
-// Here, we use the bodySmall style from the typography
 @Composable
 fun ItemText(text: String, color: Color) {
     Text(
@@ -48,7 +46,7 @@ fun ItemText(text: String, color: Color) {
     )
 }
 
-// UI Element for displaying a primary button
+// Primary button (text style)
 @Composable
 fun PrimaryTextButton(
     text: String,
@@ -61,7 +59,6 @@ fun PrimaryTextButton(
     )
 }
 
-// Here, we use the labelMedium style from the typography
 @Composable
 fun TextButton(
     text: String,
