@@ -11,13 +11,25 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
+
+// Data class Student
+data class Student(
+    var name: String
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,8 +40,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val list = listOf("Tanu", "Tina", "Tono")
-                    Home(items = list)
+                    Home()
                 }
             }
         }
@@ -37,7 +48,19 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Home(items: List<String>) {
+fun Home() {
+    val listData = remember {
+        mutableStateListOf(
+            Student("Tanu"),
+            Student("Tina"),
+            Student("Tono")
+        )
+    }
+
+    var inputField by remember {
+        mutableStateOf(Student(""))
+    }
+
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -45,16 +68,34 @@ fun Home(items: List<String>) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = stringResource(id = R.string.list_title),
+            text = stringResource(id = R.string.enter_item),
             style = MaterialTheme.typography.titleLarge
         )
+
+        TextField(
+            value = inputField.name,
+            onValueChange = { newValue ->
+                inputField = inputField.copy(name = newValue)
+            }
+        )
+
+        Button(
+            onClick = {
+                // Assignment nanti: disempurnakan (no empty), sekarang boleh dulu
+                listData.add(inputField)
+                inputField = Student("")
+            },
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Text(text = stringResource(id = R.string.button_click))
+        }
 
         LazyColumn(
             modifier = Modifier.padding(top = 16.dp)
         ) {
-            items(items) { item ->
+            items(listData) { student ->
                 Text(
-                    text = item,
+                    text = student.name,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
@@ -65,8 +106,8 @@ fun Home(items: List<String>) {
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewHome() {
+fun PreviewHomeState() {
     LAB_WEEK_09Theme {
-        Home(items = listOf("Tanu", "Tina", "Tono"))
+        Home()
     }
 }
