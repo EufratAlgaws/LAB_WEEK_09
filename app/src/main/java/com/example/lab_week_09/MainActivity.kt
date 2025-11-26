@@ -33,6 +33,12 @@ import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 import com.example.lab_week_09.ui.theme.OnBackgroundItemText
 import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
 import com.example.lab_week_09.ui.theme.PrimaryTextButton
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 data class Student(
     var name: String
@@ -62,8 +68,8 @@ fun App(navController: NavHostController) {
         startDestination = "home"
     ) {
         composable("home") {
-            Home { listDataString ->
-                navController.navigate("resultContent/?listData=$listDataString")
+            Home { encodedListData ->
+                navController.navigate("resultContent/?listData=$encodedListData")
             }
         }
 
@@ -75,8 +81,8 @@ fun App(navController: NavHostController) {
                 }
             )
         ) { backStackEntry ->
-            val listDataString = backStackEntry.arguments?.getString("listData").orEmpty()
-            ResultContent(listDataString = listDataString)
+            val jsonArg = backStackEntry.arguments?.getString("listData").orEmpty()
+            ResultContent(listDataJson = jsonArg)
         }
     }
 }
@@ -104,13 +110,24 @@ fun Home(
             inputField = inputField.copy(name = newValue)
         },
         onButtonClick = {
-            listData.add(inputField)
-            inputField = Student("")
+            // ASSIGNMENT 1: jangan add kalau kosong
+            if (inputField.name.isNotBlank()) {
+                listData.add(inputField)
+                inputField = Student("")
+            }
         },
         navigateFromHomeToResult = {
-            // Untuk sekarang, kirim join string (belum pakai Moshi)
-            val joined = listData.joinToString(separator = ",") { it.name }
-            navigateFromHomeToResult(joined)
+            // MOSHI: convert list to JSON
+            val moshi = Moshi.Builder()
+                .addLast(KotlinJsonAdapterFactory())
+                .build()
+            val type = Types.newParameterizedType(List::class.java, Student::class.java)
+            val adapter = moshi.adapter<List<Student>>(type)
+
+            val json = adapter.toJson(listData.toList())
+            val encoded = URLEncoder.encode(json, StandardCharsets.UTF_8.toString())
+
+            navigateFromHomeToResult(encoded)
         }
     )
 }
@@ -140,7 +157,6 @@ fun HomeContent(
             }
         )
 
-        // Row: Submit & Finish
         Column {
             PrimaryTextButton(
                 text = stringResource(id = R.string.button_click),
@@ -164,7 +180,21 @@ fun HomeContent(
 }
 
 @Composable
-fun ResultContent(listDataString: String) {
+fun ResultContent(listDataJson: String) {
+    val decodedJson = remember(listDataJson) {
+        URLDecoder.decode(listDataJson, StandardCharsets.UTF_8.toString())
+    }
+
+    val students: List<Student> = remember(decodedJson) {
+        val moshi = Moshi.Builder()
+            .addLast(KotlinJsonAdapterFactory())
+            .build()
+        val type = Types.newParameterizedType(List::class.java, Student::class.java)
+        val adapter = moshi.adapter<List<Student>>(type)
+
+        adapter.fromJson(decodedJson).orEmpty()
+    }
+
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -173,18 +203,11 @@ fun ResultContent(listDataString: String) {
     ) {
         OnBackgroundTitleText(text = "Result Screen")
 
-        // List sederhana dari string join, nanti di-boost pakai Moshi
-        val items = if (listDataString.isBlank()) {
-            emptyList()
-        } else {
-            listDataString.split(",")
-        }
-
         LazyColumn(
             modifier = Modifier.padding(top = 16.dp)
         ) {
-            items(items) { name ->
-                OnBackgroundItemText(text = name)
+            items(students) { student ->
+                OnBackgroundItemText(text = student.name)
             }
         }
     }
@@ -192,7 +215,7 @@ fun ResultContent(listDataString: String) {
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewAppNav() {
+fun PreviewFinal() {
     LAB_WEEK_09Theme {
         val navController = rememberNavController()
         App(navController = navController)
